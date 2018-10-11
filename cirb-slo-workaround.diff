@@ -1,0 +1,92 @@
+diff --git a/components/org.wso2.carbon.identity.sso.saml/src/main/java/org/wso2/carbon/identity/sso/saml/servlet/SAMLSSOProviderServlet.java b/components/org.wso2.carbon.identity.sso.saml/src/main/java/org/wso2/carbon/identity/sso/saml/servlet/SAMLSSOProviderServlet.java
+index a6da1d1..35c7cb2 100644
+--- a/components/org.wso2.carbon.identity.sso.saml/src/main/java/org/wso2/carbon/identity/sso/saml/servlet/SAMLSSOProviderServlet.java
++++ b/components/org.wso2.carbon.identity.sso.saml/src/main/java/org/wso2/carbon/identity/sso/saml/servlet/SAMLSSOProviderServlet.java
+@@ -189,72 +189,7 @@ public class SAMLSSOProviderServlet extends HttpServlet {
+                 if (sessionDTO != null) {
+                     setSPAttributeToRequest(req, sessionDTO.getIssuer(), sessionDTO.getTenantDomain());
+                     SAMLSSOUtil.setTenantDomainInThreadLocal(sessionDTO.getTenantDomain());
+-					// --- START CIRB/CIBG PATCH ---
+                     if (sessionDTO.isInvalidLogout()) {
+-						if (samlRequest != null && sessionId != null) {
+-                            try {
+-                                XMLObject tmp = null;
+-                                try {
+-                                    tmp = SAMLSSOUtil.unmarshall(SAMLSSOUtil.decodeForPost(samlRequest));
+-                                } catch (final IdentityException exception) {
+-                                    log.warn(
+-                                            "CIRB/CIBG: LogoutRequest not received as POST binding; reverting to REDIRECT binding...");
+-                                    tmp = SAMLSSOUtil.unmarshall(SAMLSSOUtil.decode(samlRequest));
+-                                }
+-                                final LogoutRequest logoutRequestObj = (LogoutRequest) tmp;
+-                                final String spIssuerId = logoutRequestObj.getIssuer().getValue();
+-
+-                                final SSOServiceProviderConfigManager spConfigManager =
+-                                        SSOServiceProviderConfigManager.getInstance();
+-                                SAMLSSOServiceProviderDO spDO = spConfigManager.getServiceProvider(spIssuerId);
+-
+-                                if (spDO == null) {
+-                                    final IdentityPersistenceManager persistenceManager =
+-                                            IdentityPersistenceManager.getPersistanceManager();
+-                                    spDO = persistenceManager
+-                                            .getServiceProvider(
+-                                                    (Registry) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+-                                                            .getRegistry(RegistryType.SYSTEM_CONFIGURATION),
+-                                                    spIssuerId);
+-                                }
+-
+-                                if (StringUtils.isBlank(tenantDomain)) {
+-                                    final String domain = spDO.getTenantDomain();
+-                                    SAMLSSOUtil.setTenantDomainInThreadLocal((StringUtils.isBlank(domain)
+-                                            ? MultitenantConstants.SUPER_TENANT_DOMAIN_NAME : domain)); // null tenant
+-                                                                                                        // for
+-                                                                                                        // file-based SP
+-                                                                                                        // configs
+-                                }
+-
+-                                if (spDO != null) {
+-                                    if (spDO.isDoValidateSignatureInRequests()
+-                                            && !SAMLSSOUtil.validateLogoutRequestSignature(logoutRequestObj,
+-                                                    spDO.getCertAlias(), null, null)) {
+-                                        throw new IdentityException("signature validation failed!");
+-                                    }
+-
+-                                    String callback = spDO.getSloResponseURL();
+-                                    if (StringUtils.isBlank(callback)) {
+-                                        callback = spDO.getDefaultAssertionConsumerUrl();
+-                                    }
+-                                    final LogoutResponse response =
+-                                            new SingleLogoutMessageBuilder().buildLogoutResponse(
+-                                                    logoutRequestObj.getID(), SAMLSSOConstants.StatusCodes.SUCCESS_CODE,
+-                                                    null, callback, spDO.isDoSignResponse(),
+-                                                    SAMLSSOUtil.getTenantDomainFromThreadLocal(),
+-                                                    spDO.getSigningAlgorithmUri(), spDO.getDigestAlgorithmUri());
+-                                    sendResponse(req, resp, relayState,
+-                                            SAMLSSOUtil.encode(SAMLSSOUtil.marshall(response)), callback, null, null,
+-                                            SAMLSSOUtil.getTenantDomainFromThreadLocal());
+-                                    return;
+-                                }
+-                            } catch (final Exception exception) {
+-                                log.error("CIRB/CIBG: issue in validating SAML request", exception);
+-                            }
+-                        }
+-						// --- END CIRB/CIBG PATCH ---
+-						
+                         String queryParams = "?" + SAMLSSOConstants.STATUS + "=" + URLEncoder.
+                                 encode(SAMLSSOConstants.StatusCodes.REQUESTOR_ERROR,
+                                         "UTF-8") + "&" + SAMLSSOConstants.STATUS_MSG + "=" + URLEncoder.encode
+@@ -1019,13 +954,10 @@ public class SAMLSSOProviderServlet extends HttpServlet {
+             SAMLSSOUtil.removeSession(sessionDTO.getSessionId(), validationResponseDTO.getIssuer());
+             removeSessionDataFromCache(request.getParameter(SAMLSSOConstants.SESSION_DATA_KEY));
+ 
+-            // --- START CIRB/CIBG PATCH ---
+             if (SSOSessionPersistenceManager.getSessionIndexFromCache(sessionDTO.getSessionId()) == null) {
+                 // remove tokenId Cookie when there is no session available.
+-                log.warn("CIRB/CIBG patch: suppress deletion of saml/sso cookie");
+-                // removeTokenIdCookie(request, response);
++                removeTokenIdCookie(request, response);
+             }
+-            // --- END CIRB/CIBG PATCH ---
+ 
+             if (validationResponseDTO.isIdPInitSLO()) {
+                 // redirecting to the return URL or IS logout page

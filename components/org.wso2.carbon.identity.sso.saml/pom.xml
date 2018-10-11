@@ -214,6 +214,75 @@
                     </instructions>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>compile-copy-configuration</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <encoding>UTF-8</encoding>
+                            <outputDirectory>${project.basedir}/target/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/src/main/resources</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Deploy in local IS -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <id>moveFiles</id>
+                        <phase>package</phase>
+                        <configuration>
+                            <skip>${skip.deploy.localis}</skip>
+                            <target>
+                                <copy
+                                    todir="${local.idp.carbon.home.path}/repository/components/patches/patch9999"
+                                    flatten="true" overwrite="true"
+                                    verbose="true" failonerror="true"
+                                >
+                                    <fileset
+                                        dir="${project.build.directory}"
+                                        includes="org.wso2.carbon.identity.sso.saml-5.3.0.jar" />
+                                </copy>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Assemble patch zip -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>attached</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <finalName>WSO2-CARBON-PATCH-4.4.0-9999</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <descriptor>src/main/assembly/patch.xml</descriptor>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

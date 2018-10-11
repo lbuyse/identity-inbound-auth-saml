@@ -34,6 +34,38 @@
 
     </description>
     <url>http://wso2.org</url>
+	<developers>
+		<developer>
+		  <id>lbuyse</id>
+		  <name>Laurens Buyse</name>
+		  <email>lbuyse@cirb.brussels</email>
+		</developer>
+    </developers>
+    <scm>
+		<connection>scm:git:ssh://git@stash.cirb.lan:7999/iam/identity-inbound-auth-saml.git</connection>
+		<developerConnection>scm:git:ssh://git@stash.cirb.lan:7999/iam/identity-inbound-auth-saml.git</developerConnection>
+		<url>http://stash.cirb.lan/projects/IAM/repos/iam-saml2-spring/browse/identity-inbound-auth-saml</url>
+    </scm>
+    <profiles>
+		<!-- The Configuration for the unit tests -->
+		<profile>
+		  <id>default</id>
+		  <activation>
+			<activeByDefault>true</activeByDefault>
+		  </activation>
+		  <properties>
+			<skip.deploy.localis>true</skip.deploy.localis>
+			<skip.unit.tests>false</skip.unit.tests>
+		  </properties>
+		</profile>
+		<!-- The Configuration for the integration tests -->
+		<profile>
+		  <id>deployLocalIdp</id>
+		  <properties>
+			<skip.deploy.localis>false</skip.deploy.localis>
+		  </properties>
+		</profile>
+	</profiles>
 
     <dependencyManagement>
         <dependencies>
